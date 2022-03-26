@@ -1,0 +1,2200 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Flutter Codelab / State Management in Flutter the Easy, yet Robust Way</title>
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/codelab-elements/codelab-elements.css">
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <google-codelab-analytics gaid="UA-49880327-14"></google-codelab-analytics>
+  <google-codelab codelab-gaid=""
+                  id="flutter-codelab-state-mgmt"
+                  title="Flutter Codelab / State Management in Flutter the Easy, yet Robust Way"
+                  environment="web"
+                  feedback-link="https://romanjustcodes.web.app">
+    
+      <google-codelab-step label="Overview" duration="0">
+        <h2 is-upgraded>What You&#39;ll Learn in this codelab:</h2>
+<ul>
+<li>Multiple levels at which you can manage state in your Flutter apps  <ul>
+<li>Using <strong>StatefulWidgets</strong> and the <strong>setState</strong> method to trigger changes</li>
+<li>Using <strong>ValueNotifier</strong> and <strong>ValueListenableBuilder</strong></li>
+<li>Sharing data between widgets</li>
+<li>Triggering rebuilds on one widget from another widget</li>
+<li>&#34;Lifting the State&#34; using <strong>Provider</strong></li>
+<li>Leveraging more than one service using <strong>MultiProvider</strong></li>
+<li>Communication between provided services</li>
+<li>Listening to changes and rebuilding using <strong>ChangeNotifierProvider</strong> and <strong>ChangeNotifier</strong> services in conjunction with <strong>Consumer</strong> widgets</li>
+</ul>
+</li>
+</ul>
+<p class="image-container"><img alt="Details Page" src="img/cd661b5c5e21d057.png"></p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Pre-requisites" duration="0">
+        <ul>
+<li>A computer with a browser</li>
+<li>An internet connection</li>
+</ul>
+<aside class="special"><p>We&#39;ll be using <a href="https://dartpad.dev/" target="_blank">DartPad</a>, a web-based, open-source tool that offers an online playground for learning Dart and Flutter. For more info, visit <a href="https://dart.dev/tools/dartpad" target="_blank">this link</a>.</p>
+</aside>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Set up your project" duration="0">
+        <p>First things first, let&#39;s set up our project by importing the required packages (we&#39;ll be using the <strong>material</strong> package for simplicity).</p>
+<p>Add the <strong>main</strong> method, which wraps the <strong>runApp</strong>, which will load the root widget of our app, the <strong>MaterialApp</strong> widget. Set the <strong>debugShowCheckedModeBanner</strong> to <strong>false</strong> and set as the <strong>home</strong> property a new widget we&#39;ll be creating called <strong>MyApp</strong>:</p>
+<pre><code>import &#39;package:flutter/material.dart&#39;;
+
+void main() {
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+     home: MyApp()
+    )
+  );
+}
+</code></pre>
+<p>Now create a custom widget called <strong>MyApp</strong> as a <a href="https://api.flutter.dev/flutter/widgets/StatelessWidget-class.html" target="_blank"><strong>StatelessWidget</strong></a>.</p>
+<p><strong>StatelessWidgets</strong> are the most basic type of widgets you can build on your own, and they do nothing more than describe part of the user interface by building a constellation of other widgets under it that describe the user interface more concretely, creating a hierarchy.</p>
+<p>Your custom <strong>StatelessWidget</strong> should returns the following:</p>
+<ul>
+<li>a Scaffold widget</li>
+<li>a Center widget as the body of the Scaffold</li>
+<li>a widget called <strong>MyWidget</strong> as the child of the <strong>Center</strong> widget</li>
+</ul>
+<p>Your <strong>MyApp</strong> widget should look like this:</p>
+<pre><code>class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: MyWidget(),
+      ),
+    );
+  }
+}
+</code></pre>
+<p>Still the <strong>MyWidget</strong> doesn&#39;t exist, so let&#39;s make it also as a <strong>StatelessWidget</strong>. A <strong>StatelessWidget</strong> doesn&#39;t maintain any state - its contents are pretty much rendered once on the screen and don&#39;t change at all. Let&#39;s build this widget as a very simple widget that contains the following:</p>
+<ul>
+<li>an internal property called <strong>count</strong>, type <strong>int</strong>, with an initial value of 0.</li>
+<li>a <strong>Column</strong> widget with a <strong>mainAxisSize</strong> of <strong>MainAxisSize.min</strong>.</li>
+<li>as the column&#39;s children, a simple <strong>Text</strong> widget with the content &#34;Hello World, $count!&#34; (notice the interpolated value in the string) and style it using the inherited text theme of <strong>headline4</strong>.</li>
+</ul>
+<p>Your code should look as follows:</p>
+<pre><code>class MyWidget extends StatelessWidget {
+  
+  final int count = 0;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          &#39;Hello, World, $count!&#39;,
+            style: Theme.of(context).textTheme.headline4,
+        )
+      ]
+    );
+  }
+}
+</code></pre>
+<p>Nothing exciting about this widget; it just renders the string &#34;Hello World, 0!&#34; on the screen - that&#39;s all it does. If you run this through <strong>DartPad</strong>, you will see the following:</p>
+<p class="image-container"><img alt="Details Page" src="img/e401e8d3ecddfd31.png"></p>
+<p>Now, with that in place, let&#39;s start diving into State Management, shall we?</p>
+<h2 is-upgraded>Complete Code for this step</h2>
+<pre><code>import &#39;package:flutter/material.dart&#39;;
+
+void main() {
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+     home: MyApp()
+    )
+  );
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: MyWidget(),
+      ),
+    );
+  }
+}
+
+
+class MyWidget extends StatelessWidget {
+
+  final int count = 0;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          &#39;Hello, World, $count!&#39;,
+            style: Theme.of(context).textTheme.headline4,
+        )
+      ]
+    );
+  }
+}
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="State Management using StatefulWidgets" duration="0">
+        <p><a href="https://api.flutter.dev/flutter/widgets/StatefulWidget-class.html" target="_blank"><strong>StatefulWidgets</strong></a>, in contrast with <strong>StatelessWidgets</strong>, maintain state between widget rebuilds in a separate class called <strong>State</strong>. State is information that (1) can be read synchronously when the widget is built and (2) might change during the lifetime of the widget. It is the responsibility of the widget implementer to ensure that the State is promptly notified when such state changes, using State&#39;s method <strong>setState</strong>.</p>
+<aside class="special"><p>Using <strong>StatefulWidgets</strong> and its corresponding <strong>State</strong> is the simplest way you can manage a widget&#39;s internal state, while bringing interactivity to a widget on the cheap, and a way to encapsulate changes to only this widget.  The only drawback is that the State only belongs to this widget and this widget only.</p>
+</aside>
+<p class="image-container"><img alt="Details Page" src="img/a1fd5811efb8ad3d.png"></p>
+<p>Let&#39;s now turn our <strong>StatelessWidget MyWidget</strong> into a <strong>StatefulWidget</strong>.</p>
+<p>Start by replacing <strong>StatelessWidget</strong> by <strong>StatefulWidget</strong> from the <strong>extends</strong> clause in the <strong>MyWidget</strong> class, and override the <strong>createState</strong> method, which creates the widget&#39;s corresponding state. Name it by convention <strong>MyWidgetState</strong>, as such:</p>
+<pre><code>class MyWidget extends StatefulWidget {
+  
+  @override
+  MyWidgetState createState() =&gt; MyWidgetState();
+}
+</code></pre>
+<p>Then, create the corresponding state class (<strong>MyWidgetState</strong>) and move both the <strong>build</strong> method and the <strong>count</strong> property to this new class; remove the <strong>final</strong> attribute from the <strong>count</strong> property as the state will modify it now.</p>
+<p>Your updated class from <strong>StatelessWidget</strong> to <strong>StatefulWidget</strong> should look like this:</p>
+<pre><code>class MyWidget extends StatefulWidget {
+  
+  @override
+  MyWidgetState createState() =&gt; MyWidgetState();
+}
+
+class MyWidgetState extends State&lt;MyWidget&gt; {
+  int count = 0;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          &#39;Hello, World, $count!&#39;,
+            style: Theme.of(context).textTheme.headline4,
+        )
+      ]
+    );
+  }
+}
+</code></pre>
+<p>Now let&#39;s bring in some interactivity.</p>
+<p>Add a <strong>TextButton</strong> widget to the <strong>Column</strong> widget, under the <strong>Text</strong> widget, with the following specs:</p>
+<ul>
+<li>a <strong>Text</strong> widget as its direct child, with the label &#34;Click me to update!&#34;</li>
+<li>an <strong>onPressed</strong> event; inside this event, then call the <strong>setState</strong> method, available to the <strong>State</strong>, and inside of which you&#39;ll increment the <strong>count</strong> by one everytime someone presses it.</li>
+</ul>
+<p>Your updated <strong>MyWidgetState</strong> class should look like this:</p>
+<pre><code>class MyWidgetState extends State&lt;MyWidget&gt; {
+  int count = 0;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          &#39;Hello, World, $count!&#39;,
+            style: Theme.of(context).textTheme.headline4,
+        ),
+        TextButton(
+          onPressed: () {
+            setState(() {
+              count++;
+            });
+          },
+          child: const Text(&#39;Click me to update!&#39;)
+        )
+      ]
+    );
+  }
+}
+</code></pre>
+<p>Running this code through <strong>DartPad</strong> should get you the following output:</p>
+<p class="image-container"><img alt="Details Page" src="img/31344a5adac9befd.gif"></p>
+<p>And this is pretty much what happens:</p>
+<p class="image-container"><img alt="Details Page" src="img/d3c8bfd1f98cae02.png"></p>
+<p>Upon calling <strong>setState</strong> on the <strong>State</strong> class after updating the <strong>count</strong> property, this notifies the framework that the widget needs to rebuild itself in order to reflect the changed occurred on the state; Flutter then calls the widget&#39;s <strong>build</strong> method and the UI gets repainted with the update.</p>
+<aside class="special"><p>You can even update the <strong>count</strong> property first, then call the <strong>setState</strong> method with an empty callback, and it would still work, but the norm is to perform the state change in the <strong>setState</strong>&#39;s callback method.</p>
+</aside>
+<h2 is-upgraded>Complete Code for this section</h2>
+<pre><code>import &#39;package:flutter/material.dart&#39;;
+
+void main() {
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+     home: MyApp()
+    )
+  );
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: MyWidget(),
+      ),
+    );
+  }
+}
+
+class MyChildWidget extends StatelessWidget {
+  
+  final Function? onWidgetClicked;
+  
+  const MyChildWidget({ this.onWidgetClicked });
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return TextButton(
+      onPressed: () {
+        onWidgetClicked!();
+      },
+      child: const Text(&#39;Click me to update!&#39;)
+    );
+  }
+}
+
+
+class MyWidget extends StatefulWidget {
+  
+  @override
+  MyWidgetState createState() =&gt; MyWidgetState();
+}
+
+class MyWidgetState extends State&lt;MyWidget&gt; {
+  int count = 0;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          &#39;Hello, World, $count!&#39;,
+            style: Theme.of(context).textTheme.headline4,
+        ),
+        TextButton(
+          onPressed: () {
+            setState(() {
+                  count++;
+                });
+          },
+          child: const Text(&#39;Click me to update!&#39;)
+        )
+      ]
+    );
+  }
+}
+
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Triggering a widget rebuild from another child widget" duration="0">
+        <p>Right now I showed you how you trigger the widget rebuild by calling <strong>setState</strong> from inside the same widget, but what if you want to trigger the <strong>setState</strong> from a child down the hierarchy (i.e. a child widget)?</p>
+<p>One way to do it is using a callback method that you feed into your child widget, which will trigger the connected event up the hierarchy.</p>
+<aside class="warning"><p>I&#39;m only showing this approach as a way for you to see how this can also be accomplished, but sometimes this is not the best approach, because this tightens the relationship between the parent and child widgets and you should always strive for a decoupled relationship between widgets, unless stricly necessary. Be aware.</p>
+</aside>
+<p>So this is what we&#39;ll try to accomplish:</p>
+<p class="image-container"><img alt="Details Page" src="img/a084aae5fd0159da.png"></p>
+<p>Let&#39;s create a new custom widget called <strong>MyChildWidget</strong> that extends <strong>Stateless</strong> (this one won&#39;t persist any state, just trigger an event up the chain) with the following specs:</p>
+<ul>
+<li>a constructor parameter type <strong>Function</strong> called <strong>onWidgetClicked</strong>, which will serve as the function pointer we&#39;ll be passing down to this widget for it to be invoked</li>
+<li>move the <strong>TextButton</strong> from the <strong>MyWidget</strong> to this <strong>MyChildWidget</strong>&#39;s <strong>build</strong> method. Inside the <strong>onPressed</strong> event, call the <strong>onWidgetClicked</strong> callback.</li>
+</ul>
+<p>Your newly created widget should look like this:</p>
+<pre><code>class MyChildWidget extends StatelessWidget {
+  
+  final Function? onWidgetClicked;
+  const MyChildWidget({ this.onWidgetClicked });
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return TextButton(
+      onPressed: () {
+        onWidgetClicked!();
+      },
+      child: const Text(&#39;Click me to update!&#39;)
+    );
+  }
+}
+</code></pre>
+<p>Now go back to the <strong>MyWidget</strong> widget class, and right where the <strong>TextButton</strong> was, now add our newly created widget <strong>MyChildWidget</strong>, and while instantiating it, hook up a callback to its <strong>onWidgetClicked</strong> constructor parameter. Inside, then is when you&#39;ll call the <strong>setState</strong> method to increment the <strong>count</strong> property.</p>
+<p>Your updated <strong>MyWidget</strong> class should look like this:</p>
+<pre><code>class MyWidgetState extends State&lt;MyWidget&gt; {
+  int count = 0;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          &#39;Hello, World, $count!&#39;,
+            style: Theme.of(context).textTheme.headline4,
+        ),
+        MyChildWidget(
+          onWidgetClicked: () {
+            setState(() {
+              count++;
+            });
+          }
+        )
+      ]
+    );
+  }
+}
+</code></pre>
+<p>Recap: We created a new widget called <strong>MyChildWidget</strong> which is a child of the <strong>MyWidget</strong> widget. We pass into it a callback method via the <strong>onWidgetClicked</strong> parameter. From inside the <strong>MyChildWidget</strong>, on the <strong>TextButton</strong>&#39;s onPressed method, we invoke this function, which calls up to the parent and on behalf of itself it triggers the <strong>setState</strong> method.</p>
+<p>This causes a chain reaction, causing the whole hierarchy (including the <strong>MyChildWidget</strong>) to rebuild, because it is a child of the parent widget <strong>MyWidget</strong> which just got rebuilt.</p>
+<p>If you run this on <strong>DartPad</strong> you should not be seeing any differences in behavior, all we&#39;re doing is calling the <strong>setState</strong> method from inside the hierarchy.</p>
+<p>This approach is not recommended as you can easily fall into the &#34;callback-hell&#34; trap, so avoid it, or use it with caution and consciously.</p>
+<h2 is-upgraded>Confirm that the state is encapsulated to the MyWidget widget</h2>
+<p>Now let&#39;s prove that the state within a <strong>StatefulWidget</strong> instance is encapsulated within itself and not shared across several instances.</p>
+<p>Let&#39;s refactor our structure to add more than one <strong>MyWidget</strong> instance.</p>
+<p>Back to our <strong>MyApp</strong> widget, replace the <strong>body</strong> of the <strong>Scaffold</strong> (currently a <strong>Center</strong> widget that encloses our <strong>MyWidget</strong>) by a <strong>Column</strong> widget with two equaly spaced out regions (using <strong>Expanded</strong> widgets), each of which encapsulates a <strong>Center</strong> widget with our <strong>MyWidget</strong> widget inside, as such:</p>
+<pre><code>class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        children: [
+          Expanded(
+            child: Center(
+              child: MyWidget()
+            )
+          ),
+          Expanded(
+            child: Center(
+              child: MyWidget()
+            )
+          ),
+        ]
+      ),
+    );
+  }
+}
+</code></pre>
+<p>Run this through <strong>DartPad</strong> and you should have the following output:</p>
+<p class="image-container"><img alt="Details Page" src="img/87331e3631617b7e.gif"></p>
+<p>Notice how each state is maintained separate per widget, not colliding with each other and encapsulated within itself. Neat!</p>
+<p>Cool, but what if now I want to share the same state across both widget instances, so they both know about the same count, and be able to incrementally in a coordinated fashion? Let&#39;s see that on our next step.</p>
+<h2 is-upgraded>Complete Code for this step</h2>
+<pre><code>import &#39;package:flutter/material.dart&#39;;
+
+void main() {
+  runApp(MyApp());
+}
+
+
+
+class MyApp extends StatelessWidget {
+  
+  final ValueNotifier&lt;int&gt; count = ValueNotifier(0);
+  
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: MyWidget(count: count)
+              )
+            ),
+            Expanded(
+              child: Center(
+                child: MyWidget(count: count)
+              )
+            ),
+          ]
+        ),
+      ),
+    );
+  }
+}
+
+class MyChildWidget extends StatelessWidget {
+  
+  final Function? onWidgetClicked;
+  
+  const MyChildWidget({ this.onWidgetClicked });
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return TextButton(
+      onPressed: () {
+        onWidgetClicked!();
+      },
+      child: const Text(&#39;Click me to update!&#39;)
+    );
+  }
+}
+
+class MyWidget extends StatefulWidget {
+  
+  final ValueNotifier? count;
+  
+  const MyWidget({ this.count });
+  
+  @override
+  MyWidgetState createState() =&gt; MyWidgetState();
+}
+
+class MyWidgetState extends State&lt;MyWidget&gt; {
+  
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ValueListenableBuilder(
+          valueListenable: widget.count!,
+          builder: (context, value, child) {
+            return Text(
+              &#39;Hello, World, $value!&#39;,
+              style: Theme.of(context).textTheme.headline4,
+            );
+          }
+        ),
+        MyChildWidget(
+          onWidgetClicked: () {
+            setState(() {
+              widget.count!.value++;
+            });
+          }
+        )
+      ]
+    );
+  }
+}
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Lifting the State: ValueNotifier and ValueListenableBuilder" duration="0">
+        <p>Now we&#39;ll explore the concept of &#34;lifting the state&#34;. As you may have noticed in the previous sections, the state is encapsulated within each widget via their corresponding <strong>State</strong> classes, which persists the values they are interested in preserving across multiple widget rebuilds. This time we will take out the state from inside the widget and &#34;elevate&#34; it, or &#34;lift&#34; it to a higher level, that way multiple widgets can access it, as opposed to being encapsulated, or trapped within a single widget, hence the term &#34;lift&#34;.</p>
+<p>For this we will use some constructs provided by <strong>Flutter</strong> out of the box called <strong>ValueNotifier</strong> and the <strong>ValueListenableBuilder</strong> widget.</p>
+<p><a href="https://api.flutter.dev/flutter/foundation/ValueNotifier-class.html" target="_blank"><strong>ValueNotifier</strong></a> is class that holds a single value; when its value is replaced with something that is not equal to the old value, this class notifies any entity that is listening, thus causing an action, such as rebuilding.</p>
+<p>One companion widget to the <strong>ValueNotifier</strong> is the <a href="https://api.flutter.dev/flutter/widgets/ValueListenableBuilder-class.html" target="_blank"><strong>ValueListenableBuilder</strong></a>, which as the name implies, it &#34;listens&#34; for a value, and when it changes, it rebuilds its contents. This class automatically registers itself as a listener to a <strong>ValueListenable</strong> (i.e. a <strong>ValueNotifier</strong> object) and call its corresponding <strong>builder</strong> method with updated values when the value changes.</p>
+<p>Let&#39;s see a schematic of how we&#39;ll do it as a way to lift the state out of the <strong>MyWidget</strong> widget:</p>
+<p class="image-container"><img alt="Details Page" src="img/f8c1f02a805d03f3.png"></p>
+<p>Now let&#39;s do some refactoring. We won&#39;t be using <strong>StatefulWidgets</strong> anymore as the state won&#39;t be encapsulated within a single widget. We&#39;ll move the state to a higher level, from the <strong>MyWidget</strong> widget to the <strong>MyApp</strong> widget, that way the app can serve the listener down the hierarchy.</p>
+<h2 is-upgraded>Updating the MyWidget widget</h2>
+<p>Let&#39;s start from the <strong>MyWidget</strong> widget.</p>
+<p>Make them back into a <strong>StatelessWidget</strong> by removing the <strong>MyWidgetState</strong> class portion and rename it back to <strong>MyWidget</strong>.</p>
+<p>Create a <strong>final</strong> property called <strong>count</strong>, type <strong>ValueNotifier</strong> of type <strong>int</strong> and its corresponding constructor. This means we&#39;ll be feeding a <strong>ValueNotifier</strong> instance to be listened to.</p>
+<pre><code>final ValueNotifier&lt;int&gt;? count;
+const MyWidget({ this.count });
+
+</code></pre>
+<p>Inside the <strong>build</strong> method, wrap the existing <strong>Text</strong> widget inside a <strong>ValueListenableBuilder</strong>, type <strong>int</strong>, with the following attributes:</p>
+<ul>
+<li>valueListenable: the <strong>ValueListenable</strong> instance (in our case, a <strong>ValueNotifier</strong> - count)</li>
+<li>builder: the callback that will be triggered upon changes to the count <strong>ValueNotifier</strong></li>
+</ul>
+<pre><code language="language-flutter" class="language-flutter">ValueListenableBuilder&lt;int&gt;(
+  valueListenable: count!,
+  builder: (context, value, child) {
+    return Text(
+      &#39;Hello, World, $value!&#39;,
+      style: Theme.of(context).textTheme.headline4,
+    );
+  }
+)
+
+</code></pre>
+<p>Inside the <strong>MyChildWidget</strong>&#39;s <strong>onWidgetClicked</strong> method, get rid of the <strong>setState</strong> call, and instead, just increment the <strong>value</strong> property of the <strong>count ValueNotifier</strong>, which will increment its value and thus notify any listener about the change:</p>
+<pre><code>MyChildWidget(
+  onWidgetClicked: () {
+    count!.value++;
+  }
+)
+</code></pre>
+<p>The whole updated <strong>MyWidget</strong> class should look like this:</p>
+<pre><code>class MyWidget extends StatelessWidget {
+  
+  final ValueNotifier&lt;int&gt;? count;
+  const MyWidget({ this.count });
+  
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ValueListenableBuilder&lt;int&gt;(
+          valueListenable: count!,
+          builder: (context, value, child) {
+            return Text(
+              &#39;Hello, World, $value!&#39;,
+              style: Theme.of(context).textTheme.headline4,
+            );
+          }
+        ),
+        MyChildWidget(
+          onWidgetClicked: () {
+           count!.value++;
+          }
+        )
+      ]
+    );
+  }
+}
+</code></pre>
+<h2 is-upgraded>Updating the MyApp Widget</h2>
+<p>Let&#39;s go back now up to the <strong>MyApp</strong> widget, and create a new <strong>final</strong> property, called <strong>count</strong> type <strong>ValueNotifier</strong> type <strong>int</strong>, initialized to 0:</p>
+<pre><code>final ValueNotifier&lt;int&gt; count = ValueNotifier(0);
+</code></pre>
+<p>Now, inside the body, go to each <strong>MyWidget</strong> instance and feed this <strong>count ValueNotifier</strong> to each of those instances via their constructor, as such:</p>
+<pre><code>Expanded(
+  child: Center(
+    child: MyWidget(count: count)
+  )
+)
+</code></pre>
+<p>The whole updated <strong>MyApp</strong> class should look like this:</p>
+<pre><code>class MyApp extends StatelessWidget {
+  
+  final ValueNotifier&lt;int&gt; count = ValueNotifier(0);
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        body: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: MyWidget(count: count)
+              )
+            ),
+            Expanded(
+              child: Center(
+                child: MyWidget(count: count)
+              )
+            )
+          ]
+        ),
+      );
+  }
+}
+</code></pre>
+<p>Running this through DartPad, now notice how by clicking on either one of the widgets, the value changes on both sides, keeping both widgets in sync; this means both are able to listen to the same value, and respond to changes triggered by either one of them. Pretty cool!</p>
+<p class="image-container"><img alt="Details Page" src="img/31625c74119deb56.gif"></p>
+<h2 is-upgraded>Complete Code for this section</h2>
+<pre><code>import &#39;package:flutter/material.dart&#39;;
+
+void main() {
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: MyApp()
+    )
+  );
+}
+
+class MyApp extends StatelessWidget {
+  
+  final ValueNotifier&lt;int&gt; count = ValueNotifier(0);
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        body: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: MyWidget(count: count)
+              )
+            ),
+            Expanded(
+              child: Center(
+                child: MyWidget(count: count)
+              )
+            )
+          ]
+        ),
+      );
+  }
+}
+
+class MyChildWidget extends StatelessWidget {
+  
+  final Function? onWidgetClicked;
+  
+  const MyChildWidget({ this.onWidgetClicked });
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return TextButton(
+      onPressed: () {
+        onWidgetClicked!();
+      },
+      child: const Text(&#39;Click me to update!&#39;)
+    );
+  }
+}
+
+class MyWidget extends StatelessWidget {
+  
+  final ValueNotifier&lt;int&gt;? count;
+  const MyWidget({ this.count });
+  
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ValueListenableBuilder&lt;int&gt;(
+          valueListenable: count!,
+          builder: (context, value, child) {
+            return Text(
+              &#39;Hello, World, $value!&#39;,
+              style: Theme.of(context).textTheme.headline4,
+            );
+          }
+        ),
+        MyChildWidget(
+          onWidgetClicked: () {
+           count!.value++;
+          }
+        )
+      ]
+    );
+  }
+}
+
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Lifting the State: Using Provider" duration="0">
+        <p>Now that we&#39;ve decoupled our state from the widgets that consume it, what if now I want to lift the state waaaaaaayyyy higher, let&#39;s say I want to share it across pages? That&#39;d be pretty cool, that way the values can be shared not only across a handful of widgets but the whole application! Here comes <strong>Provider</strong> to the rescue!</p>
+<p><strong>Provider</strong> is a simple app state management approach that allows you to decouple the business logic that powers your application from the UI rendering logic that makes Flutter such an amazing framework to build dynamic and fluid UIs. Read up more on <a href="https://docs.flutter.dev/development/data-and-backend/state-mgmt/simple" target="_blank"><strong>Provider</strong></a> to get more info.</p>
+<p>This functionality is conveniently packaged into a single package called <strong>provider</strong>, and in essence is nothing more than a wrapper around <strong>InheritedWidget</strong>, <strong>InheritedNotifier</strong> and <strong>InheritedModel</strong>, and more.</p>
+<aside class="special"><p>I won&#39;t be covering those here, because they are a bit low-level for what we&#39;re trying to do, and you may never have to use them in your apps only for very niche cases.</p>
+</aside>
+<p>This is what we&#39;ll be accomplishing by using the <strong>Provider</strong>:</p>
+<p class="image-container"><img alt="Details Page" src="img/f93e236cc97de65f.png"></p>
+<h2 is-upgraded>Creating the Service</h2>
+<p>First off, we&#39;ll be creating a class that will hold the values that we&#39;re interested in persisting outside of the widgets and across widget rebuilds. For this, you just create a regular class with properties in it - we&#39;ll call it <strong>ValueService</strong> as it will be serving the purpose of encapsulating not only values, but functionality - sort of like a service, being &#34;provided&#34; by the application.</p>
+<p>Whenever any interested entity down the hierarchy wants to have access to it, it uses the provided <strong>BuildContext</strong> from the framework, and search up the hierarchy until it finds the first reference of the provided service, using the <strong>Provider.of</strong> utility method to fetch it, provided the type of instance, the context, and an optional <strong>listen</strong> flag, as in:</p>
+<pre><code>ValueService valueService = Provider.of&lt;ValueService&gt;(context);
+</code></pre>
+<p>Let&#39;s start!</p>
+<p>Import the required package (provider) at the top of the file:</p>
+<pre><code>import &#39;package:provider/provider.dart&#39;;
+</code></pre>
+<p>Create the <strong>ValueService</strong> class that will hold our value:</p>
+<pre><code>class ValueService {
+  int count = 0;
+}
+</code></pre>
+<p>Now, let&#39;s refactor the <strong>main</strong> method. Wrap the existing <strong>Material</strong> app widget inside the <strong>runApp</strong> method inside a <strong>Provider</strong>, with the following specs:</p>
+<ul>
+<li>set its <strong>create</strong> property to be a callback that returns an instance of the service to be provided (in our case, <strong>ValueService</strong>)</li>
+<li>child: The child that will serve as the starting point through which the instance of the provided services will be tricked down, in our case the <strong>MaterialApp</strong>, as below:</li>
+</ul>
+<pre><code language="language-flutter" class="language-flutter">void main() {
+  runApp(
+    Provider( 
+      create: (_) =&gt; ValueService(),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: MyApp()
+      )
+    )
+  );
+}
+</code></pre>
+<h2 is-upgraded>Updating the MyWidget widget</h2>
+<p>Let&#39;s clean up in here and get rid of the <strong>ValueNotifier</strong> called <strong>count</strong> altogether, along with its corresponding constructor parameter.</p>
+<p>Instead, in order to differentiate the widget, let&#39;s add a <strong>label</strong> property, type <strong>String</strong> that will hold the label for the widget so we can uniquely identify it and make it more reusable.</p>
+<pre><code>final String? label;
+const MyWidget({ this.label });
+</code></pre>
+<p>Inside the <strong>build</strong> method, since this is a descendant widget, you can access the provided service at the top by using the supplied <strong>BuildContext</strong> and using the <strong>Provider.of</strong> utility method to pull the service, as such:</p>
+<pre><code>ValueService valueService = Provider.of&lt;ValueService&gt;(context, listen: false);
+</code></pre>
+<p>Now that a reference to the service has been fetched, let&#39;s consume it. Replace the <strong>ValueListenableBuilder</strong> from the widget structure (we don&#39;t need it anymore) and replace it by just the <strong>Text</strong> widget that is inside of it. Replace the content of the <strong>Text</strong> widget by the provided <strong>label</strong> and interpolate the value from the service in the string, as shown below:</p>
+<pre><code>Text(
+  &#39;${label!}, ${valueService.count}&#39;,
+  style: Theme.of(context).textTheme.headline4,
+),
+</code></pre>
+<p>Next, inside the <strong>MyChildWidget</strong>&#39;s callback method <strong>onWidgetClicked()</strong>, is where now we&#39;ll update the value of <strong>count</strong> from the <strong>ValueService</strong> reference by incrementing it:</p>
+<pre><code>MyChildWidget(
+  onWidgetClicked: () {
+    valueService.count++;
+  }
+)
+</code></pre>
+<p>Now this widget is ready to engage with the provided service. We&#39;ll come back in just a minute to do some additional adjustments, but for now we&#39;re all set.</p>
+<p>Updated full <strong>MyWidget</strong> widget should look like this:</p>
+<pre><code language="language-flutter" class="language-flutter">class MyWidget extends StatelessWidget {
+  
+  final String? label;
+  const MyWidget({ this.label });
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    var valueService = Provider.of&lt;ValueService&gt;(context, listen: false);
+    
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          &#39;${label!}, ${valueService.count}&#39;,
+          style: Theme.of(context).textTheme.headline4,
+        ),
+        MyChildWidget(
+          onWidgetClicked: () {
+            valueService.count++;
+          }
+        )
+      ]
+    );
+  }
+}
+
+</code></pre>
+<h2 is-upgraded>Updating the MyApp widget</h2>
+<p>With that in place, let&#39;s go back up to the <strong>MyApp</strong> widget, and update the <strong>MyWidget</strong> instances by supplying a unique label to each; to the top <strong>MyWidget</strong> instance, set the <strong>label</strong> property to &#34;Top Widget&#34;, and to the second one set it to &#34;Bottom Widget&#34;, as such:</p>
+<pre><code language="language-flutter" class="language-flutter">  Expanded(
+    child: Center(
+      child: MyWidget(
+        label: &#39;Top Widget&#39;)
+    )
+  ),
+  Expanded(
+    child: Center(
+      child: MyWidget(
+        label: &#39;Bottom Widget&#39;)
+    )
+  ),
+
+</code></pre>
+<p>Updated <strong>MyApp</strong> widget looks like this:</p>
+<pre><code language="language-flutter" class="language-flutter">class MyApp extends StatelessWidget {
+
+  @override
+  Widget build(BuildContext context) {
+    
+    return Scaffold(
+        body: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: MyWidget(
+                  label: &#39;Top Widget&#39;)
+              )
+            ),
+            Expanded(
+              child: Center(
+                child: MyWidget(
+                  label: &#39;Bottom Widget&#39;)
+              )
+            ),
+          ]
+        ),
+      );
+  }
+}
+</code></pre>
+<p>Now, run it through DartPad to see what this does:</p>
+<p class="image-container"><img alt="Details Page" src="img/dbaba7ee371eaaaa.gif"></p>
+<p>Uh-oh, something is broken!</p>
+<p>Not really - we are just not listening to the changes that are being set on the <strong>count</strong> property, and no one is notifying of those changes. And since this page didn&#39;t rebuild based on those changes being made, we don&#39;t see the updates.</p>
+<p>Let&#39;s do an experiment to test.</p>
+<h2 is-upgraded>Add an additional page</h2>
+<p>We&#39;ll add a separate page, from where we&#39;ll access the provided service <strong>ValueService</strong> after the changes have been made.</p>
+<p>Create a widget class called <strong>NextPage</strong> with the following content:</p>
+<pre><code>class NextPage extends StatelessWidget {
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    var valueService = Provider.of&lt;ValueService&gt;(context, listen: false);
+
+    return Scaffold(
+      appBar: AppBar(),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+           Text(&#39;This the value on another page!&#39;),
+           Text(&#39;${valueService.count}&#39;,
+            style: Theme.of(context).textTheme.headline4
+           )
+          ],
+        )
+      )
+    );
+  }
+}
+</code></pre>
+<p>Notice how in the <strong>build</strong> method I&#39;m pulling the provided service <strong>ValueService</strong> and consuming the <strong>count</strong> value from it. I&#39;m also adding an <strong>AppBar</strong> widget to the <strong>Scaffold</strong> widget so I have the ability to go back to the page we navigate from.</p>
+<p>Now, go back to the <strong>MyApp</strong> page, and under the two <strong>MyWidget</strong> widgets, let&#39;s add another <strong>TextButton</strong> widget to allow us to navigate to that other page we created.</p>
+<pre><code>TextButton(
+  onPressed: () {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) =&gt; NextPage())
+    );
+  },
+  child: const Text(&#39;Go to another page&#39;)
+)
+</code></pre>
+<p>Also add an <strong>AppBar</strong> widget to the <strong>Scaffold</strong> widget. The updated <strong>MyApp</strong> widget class should look like this:</p>
+<pre><code>class MyApp extends StatelessWidget {
+
+  @override
+  Widget build(BuildContext context) {
+    
+    return Scaffold(
+        appBar: AppBar(),
+        body: Column(
+          children: [
+            const Expanded(
+              child: Center(
+                child: MyWidget(
+                  label: &#39;Top Widget&#39;)
+              )
+            ),
+            const Expanded(
+              child: Center(
+                child: MyWidget(
+                  label: &#39;Bottom Widget&#39;)
+              )
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) =&gt; NextPage())
+                );
+              },
+              child: const Text(&#39;Go to another page&#39;)
+            )
+          ]
+        ),
+        
+      );
+  }
+}
+</code></pre>
+<p>Now, let&#39;s give it another shot. Let&#39;s do it again. Click on the &#34;Click me to update!&#34; button on both widgets. Click 2 times on the top widget, 2 times on the bottom widget, for a total of 4. Now, navigate to the <strong>NextPage</strong> widget by clicking on the newly added <strong>TextButton</strong> that says &#34;Go to another page&#34;. And there you should see a value of 4 under the label &#34;This is the value on another page!&#34;.</p>
+<p class="image-container"><img alt="Details Page" src="img/e02a3df4fe653d6c.gif"></p>
+<p>So just to recap - the <strong>Provider</strong> allows you to hold values for you in memory and makes them available to all descendants of the providing widget, but does not notify of any changes. We&#39;ll look into widgets that do broadcast or &#34;notify&#34; listeners, which then rebuild to reflect the changes made.</p>
+<h2 is-upgraded>Complete Code for this section</h2>
+<pre><code>import &#39;package:flutter/material.dart&#39;;
+import &#39;package:provider/provider.dart&#39;;
+
+void main() {
+  runApp(
+    Provider( 
+      create: (_) =&gt; ValueService(),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: MyApp()
+      )
+    )
+  );
+}
+
+
+class ValueService {
+  int count = 0;
+}
+
+
+class MyApp extends StatelessWidget {
+
+  @override
+  Widget build(BuildContext context) {
+    
+    return Scaffold(
+        appBar: AppBar(),
+        body: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: MyWidget(
+                  label: &#39;Top Widget&#39;)
+              )
+            ),
+            Expanded(
+              child: Center(
+                child: MyWidget(
+                  label: &#39;Bottom Widget&#39;)
+              )
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) =&gt; NextPage())
+                );
+              },
+              child: const Text(&#39;Go to another page&#39;)
+            )
+          ]
+        ),
+        
+      );
+  }
+}
+
+class NextPage extends StatelessWidget {
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    var valueService = Provider.of&lt;ValueService&gt;(context, listen: false);
+
+    return Scaffold(
+      appBar: AppBar(),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+           Text(&#39;This is the value on another page!&#39;),
+           Text(&#39;${valueService.count}&#39;,
+            style: Theme.of(context).textTheme.headline4
+           )
+          ],
+        )
+      )
+    );
+  }
+}
+
+class MyChildWidget extends StatelessWidget {
+  
+  final Function? onWidgetClicked;
+  
+  const MyChildWidget({ this.onWidgetClicked });
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return TextButton(
+      onPressed: () {
+        onWidgetClicked!();
+      },
+      child: const Text(&#39;Click me to update!&#39;)
+    );
+  }
+}
+
+class MyWidget extends StatelessWidget {
+  
+  final String? label;
+  const MyWidget({ this.label });
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    var valueService = Provider.of&lt;ValueService&gt;(context, listen: false);
+    
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          &#39;${label!}, ${valueService.count}&#39;,
+          style: Theme.of(context).textTheme.headline4,
+        ),
+        MyChildWidget(
+          onWidgetClicked: () {
+            valueService.count++;
+          }
+        )
+      ]
+    );
+  }
+}
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Lifting the State: Using ChangeNotifier" duration="0">
+        <p>We saw the benefits of lifting up the state to a much higher level by using the <strong>Provider</strong> approach, and we noticed how we were able to access provided services not just within a widget, but within even separate pages. But we didn&#39;t get notified of changes as soon as they happened - instead only at first build of a widget when it pulls the initial values.</p>
+<p>For that, there are two constructs that provide the capability to notify listeners on values changing, and widgets that respond to those changes by rebuilding themselves - sort of like the <strong>ValueNotifier</strong> and <strong>ValueListenableBuilder</strong> (which would also be used within this context, but only on a single value). If you want to apply this concept at a class-wide level, you should create a class that extends from <strong>ChangeNotifier</strong>.</p>
+<p class="image-container"><img alt="Details Page" src="img/ea404111b3e43b58.png"></p>
+<p><a href="https://api.flutter.dev/flutter/foundation/ChangeNotifier-class.html" target="_blank"><strong>ChangeNotifier</strong></a> is a class that can be extended or mixed in that provides a change notification API using <strong>VoidCallback</strong> for notifications, and it is provided just like the <strong>Provider</strong>, but using another construct called <strong>ChangeNotifierProvider</strong>.</p>
+<p>Let&#39;s make some changes to our code.</p>
+<p>At the top of the code, replace <strong>Provider</strong> by <strong>ChangeNotifierProvider</strong>:</p>
+<pre><code>void main() {
+  runApp(
+    ChangeNotifierProvider( 
+      create: (_) =&gt; ValueService(),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: MyApp()
+      )
+    )
+  );
+}
+</code></pre>
+<aside class="warning"><p>We&#39;re not done yet! You should be getting an error by now, because the <strong>ValueService</strong> does not extend <strong>ChangeNotifier</strong> thus cannot be provided by the <strong>ChangeNotifierProvider</strong>. Let&#39;s make that change now.</p>
+</aside>
+<p>Go to the <strong>ValueService</strong> class and let&#39;s make the following changes:</p>
+<ul>
+<li>make the <strong>ValueService</strong> class extend <strong>ChangeNotifier</strong>. This is the class that gives it the broadcasting / notification capabilities to notify whoever is listening so as to update itself. It has a special method called <strong>notifyListeners</strong> which does exactly as its name implies.</li>
+</ul>
+<p>Instead of just being a plain property called <strong>count</strong>, make a getter and a setter around that property. Inside its <strong>setter</strong> method, right after setting its value, call the <strong>notifyListeners()</strong> inherited method.</p>
+<p>Your updated class should look as follows:</p>
+<pre><code>class ValueService extends ChangeNotifier {
+  
+  int _count = 0;
+  int get count =&gt; _count;
+  
+  set count(int value) {
+    _count = value;
+    notifyListeners();
+  }
+}
+</code></pre>
+<p>Now, every time someone attempts to set the value of count, this will call its internal <strong>notifyListeners</strong> method, and whoever is consuming this service, will trigger either its build method, or in the special widgets, its <strong>builder</strong> callback method.</p>
+<p>Now, in order to consume this newly provided service, there&#39;s a special widget that does just that - the <a href="https://pub.dev/documentation/provider/latest/provider/Consumer-class.html" target="_blank"><strong>Consumer</strong></a> widget, whose only job is to listen to changes on the consumed service in question and runs its builder method.</p>
+<p>Let&#39;s go back to the <strong>MyWidget</strong> widget and do some refactoring.</p>
+<p>Remove the provided service <strong>ValueService</strong> instance at the top of the build method. Wrap the returned <strong>Column</strong> inside a <strong>Consumer</strong> widget of type <strong>ValueService</strong> with the following specs:</p>
+<ul>
+<li>set the <strong>Consumer</strong> of type <strong>ValueService</strong></li>
+<li>on its <strong>builder</strong> method, set the 3 required parameters: a context of type <strong>BuildContext</strong>, the provided service <strong>ValueService</strong>, and a child <strong>Widget</strong>, for optimization purposes. Return the existing <strong>Column</strong> structure out of this <strong>builder</strong> method.</li>
+</ul>
+<p>The updated <strong>MyWidget</strong> widget should look like this:</p>
+<pre><code>class MyWidget extends StatelessWidget {
+  
+  final String? label;
+  const MyWidget({ this.label });
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return Consumer&lt;ValueService&gt;(
+      builder: (context, valueService, child) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              &#39;${label!}, ${valueService.count}&#39;,
+              style: Theme.of(context).textTheme.headline4,
+            ),
+            MyChildWidget(
+              onWidgetClicked: () {
+                valueService.count++;
+              }
+            )
+          ]
+        );
+      },
+    );
+  }
+}
+</code></pre>
+<p>Let&#39;s try the same exercise as before; this time since are using the <strong>Consumer</strong> widget that listens to the <strong>ValueService</strong>, and this service notifies all its listeners and instructs them to rebuild, now we should see the change occur in real time.</p>
+<p class="image-container"><img alt="Details Page" src="img/a85ccefd0ddeabd4.gif"></p>
+<p>Notice how all widgets are in sync, even when you navigate to another page, come back, etc. How cool is that!</p>
+<p>Now you can even create other widgets that consume this same service in a variety of ways. The code below shows a new custom widget called <strong>NotificationWidget</strong> that shows a badge notification on the <strong>AppBar</strong> widget in the <strong>MyApp</strong> widget:</p>
+<pre><code>class NotificationWidget extends StatelessWidget {
+  
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 60,
+      margin: const EdgeInsets.only(right: 10),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.notifications,
+            color: Colors.white,
+            size: 25
+          ),
+          Container(
+            height: 30,
+            padding: const EdgeInsets.only(left: 10, right: 10),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: Colors.red
+            ),
+            child: Consumer&lt;ValueService&gt;(
+              builder: (context, vService, child) {
+                return Text(vService.count.toString());
+              }
+            )
+          )
+        ] 
+      )
+    );
+  }
+}
+</code></pre>
+<p>Grab this widget and place it on the <strong>MyAppBar</strong>, inside the <strong>Scaffold</strong>&#39;s <strong>AppBar</strong>, as a children of its <strong>actions</strong> property, as such:</p>
+<pre><code>Scaffold(
+  appBar: AppBar(
+    actions: [
+      NotificationWidget()
+    ]
+  ),
+  body: // ... rest of the code omitted for brevity
+}
+</code></pre>
+<p>Updated <strong>MyApp</strong> code should look as follows:</p>
+<pre><code>class MyApp extends StatelessWidget {
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return Scaffold(
+      appBar: AppBar(
+        actions: [
+          NotificationWidget()
+        ]
+      ),
+        body: Column(
+          children: [
+            const Expanded(
+              child: Center(
+                child: MyWidget(
+                  color: Colors.green,
+                  label: &#39;Top Widget&#39;)
+              )
+            ),
+            const Expanded(
+              child: Center(
+                child: MyWidget(
+                  color: Colors.purple,
+                  label: &#39;Bottom Widget&#39;)
+              )
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) =&gt; NextPage())
+                );
+              },
+              child: const Text(&#39;Go to another page&#39;)
+            )
+          ]
+        ),
+    );
+  }
+}
+</code></pre>
+<p>Run it on DartPad, and click on the buttons in any of the <strong>MyWidget</strong> widgets, notice the new <strong>NotificationWidget</strong> at the top right corner, listening to the same changes the other widgets are:</p>
+<p class="image-container"><img alt="Details Page" src="img/caf492656ba5f20a.gif"></p>
+<h2 is-upgraded>Complete code for this section</h2>
+<pre><code>import &#39;package:flutter/material.dart&#39;;
+import &#39;package:provider/provider.dart&#39;;
+
+void main() {
+  runApp(
+    ChangeNotifierProvider( 
+      create: (_) =&gt; ValueService(),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: MyApp()
+      )
+    )
+  );
+}
+
+
+class ValueService extends ChangeNotifier {
+  
+  int _count = 0;
+  int get count =&gt; _count;
+  
+  set count(int value) {
+    _count = value;
+    notifyListeners();
+  }
+}
+
+
+class MyApp extends StatelessWidget {
+
+  @override
+  Widget build(BuildContext context) {
+    
+    return Scaffold(
+        appBar: AppBar(
+          actions: [
+            NotificationWidget()
+          ]
+        ),
+        body: Column(
+          children: [
+            const Expanded(
+              child: Center(
+                child: MyWidget(
+                  label: &#39;Top Widget&#39;)
+              )
+            ),
+            const Expanded(
+              child: Center(
+                child: MyWidget(
+                  label: &#39;Bottom Widget&#39;)
+              )
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) =&gt; NextPage())
+                );
+              },
+              child: const Text(&#39;Go to another page&#39;)
+            )
+          ]
+        ),
+        
+      );
+  }
+}
+
+class NextPage extends StatelessWidget {
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    var valueService = Provider.of&lt;ValueService&gt;(context, listen: false);
+
+    return Scaffold(
+      appBar: AppBar(),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+           const Text(&#39;This is the value on another page!&#39;),
+           Text(&#39;${valueService.count}&#39;,
+            style: Theme.of(context).textTheme.headline4
+           )
+          ],
+        )
+      )
+    );
+  }
+}
+
+class MyChildWidget extends StatelessWidget {
+  
+  final Function? onWidgetClicked;
+  
+  const MyChildWidget({ this.onWidgetClicked });
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return TextButton(
+      onPressed: () {
+        onWidgetClicked!();
+      },
+      child: const Text(&#39;Click me to update!&#39;)
+    );
+  }
+}
+
+class MyWidget extends StatelessWidget {
+  
+  final String? label;
+  const MyWidget({ this.label });
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return Consumer&lt;ValueService&gt;(
+      builder: (context, valueService, child) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              &#39;${label!}, ${valueService.count}&#39;,
+              style: Theme.of(context).textTheme.headline4,
+            ),
+            MyChildWidget(
+              onWidgetClicked: () {
+                valueService.count++;
+              }
+            )
+          ]
+        );
+      },
+    );
+  }
+}
+
+class NotificationWidget extends StatelessWidget {
+  
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 60,
+      margin: const EdgeInsets.only(right: 10),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.notifications,
+            color: Colors.white,
+            size: 25
+          ),
+          Container(
+            height: 30,
+            padding: const EdgeInsets.only(left: 10, right: 10),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: Colors.red
+            ),
+            child: Consumer&lt;ValueService&gt;(
+              builder: (context, vService, child) {
+                return Text(vService.count.toString());
+              }
+            )
+          )
+        ] 
+      )
+    );
+  }
+}
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Lifting the State: Adding more than one Provided Service" duration="0">
+        <p>Of course the mayority of the apps out there rely on more than just a single service; services encapsulate business logic that shouldn&#39;t live on the widget classes, and this promotes a good separation of concerns. Services are usually divided by features, functionality or app domains, and just a simple way on your path to achieving a clean architecture and good distribution of your code.</p>
+<p>In this section we&#39;ll do more than one service, just to illustrate our point.</p>
+<p class="image-container"><img alt="Details Page" src="img/53cb21c971740d09.png"></p>
+<p>Instead of providing a single service to the descendants of this app, we&#39;ll add an additional service. There&#39;s no limit in how many services you can provide down the hierarchy.</p>
+<p>Let&#39;s create a new class called <strong>ColorService</strong>, which will also extend <strong>ChangeNotifier</strong>. This service will be provided to the descendants but only consumable by the <strong>NotificationWidget</strong> as it will be used to change the color on the notification badge programmatically. Add the following properties:</p>
+<ul>
+<li>a propery called <strong>color</strong> with a getter and a setter, with a default color of <strong>Colors.red</strong>. Make sure to call <strong>notifyListeners</strong> upon setting the color:</li>
+</ul>
+<pre><code language="language-flutter" class="language-flutter">class ColorService extends ChangeNotifier {
+  
+  Color _color = Colors.red;
+  
+  Color get color =&gt;  _color;
+  
+  set color(Color value) {
+    _color = value;
+    notifyListeners();
+  }
+}
+</code></pre>
+<p>Now, how do we add more than one <strong>ChangeNotifierProvider</strong> at the top of our hierarchy so they trickle down? Using another special widget called <strong>MultiProvider</strong> which does just that: provides multiple providers down the hierarchy.</p>
+<p>Wrap the whole <strong>MaterialApp</strong> widget inside a <strong>MultiProvider</strong> widget, set the <strong>MaterialApp</strong> as the child of this widget.</p>
+<p>For its <strong>providers</strong> property, set both <strong>ValueService</strong> and now the <strong>ColorService</strong> wrapped inside <strong>ChangeNotifierProvider</strong>s, as the below updated <strong>void main</strong> method illustrates:</p>
+<pre><code>void main() {
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) =&gt; ValueService()
+        ),
+        ChangeNotifierProvider(
+          create: (_) =&gt; ColorService()
+        )
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: MyApp()
+      )
+    )
+  );
+}
+</code></pre>
+<p>And as simple as that, you are all set, ready to consume this newly provided service.</p>
+<p>Down on the <strong>NotificationWidget</strong>, let&#39;s consume this service.</p>
+<p>Inside its <strong>build</strong> method, wrap the existing <strong>Consumer&lt;ValueService&gt;</strong> service in yet another consumer that listens to the <strong>ColorService</strong>. Set the color of the existing <strong>Container</strong> widget to the color that comes from the <strong>ColorService</strong> supplied to this <strong>Consumer</strong>, as such:</p>
+<pre><code>Consumer&lt;ColorService&gt;(
+  builder: (context, cService, child) {
+    return Container(
+      height: 30,
+      padding: const EdgeInsets.only(left: 10, right: 10),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: cService.color
+      ),
+      child: Consumer&lt;ValueService&gt;(
+        builder: (context, vService, child) {
+          return Text(vService.count.toString());
+        }
+      )
+    );
+  }
+)
+</code></pre>
+<p>Now we need to provide the way to change the value of the color in this service.</p>
+<p>Let&#39;s refactor the <strong>MyWiget</strong> widget, to now not only take a <strong>label</strong> but a <strong>Color</strong> parameter, that way each widget has a unique way to set the color of the <strong>NotificationWidget</strong> badge.</p>
+<p>Add a <strong>Color</strong> property, called <strong>color</strong>; add its corresponding constructor parameter:</p>
+<pre><code>final String? label;
+final Color? color;
+
+const MyWidget({ this.label, this.color });
+
+</code></pre>
+<p>Add an additional custom button using the <strong>MyChildWidget</strong> custom widget and providing a label and a callback for its <strong>onWidgetClicked</strong> event; inside this callback, invoke the <strong>ColorService</strong> by pulling it using the <strong>Provider.of</strong>, then setting its <strong>color</strong> value based on the supplied <strong>color</strong> property, as such:</p>
+<pre><code>MyChildWidget(
+  label: &#34;Click to update color&#34;,
+  onWidgetClicked: () {
+    var colorService = Provider.of&lt;ColorService&gt;(context, listen: false);
+    colorService.color = color!;
+  }
+)
+</code></pre>
+<p>Updated <strong>MyWidget</strong> widget class should mimic this one:</p>
+<pre><code>class MyWidget extends StatelessWidget {
+  
+  final String? label;
+  final Color? color;
+  
+  const MyWidget({ this.label, this.color });
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Consumer&lt;ValueService&gt;(
+          builder: (context, vService, child) {
+            return Text(
+              &#39;${label!}, ${vService.count}&#39;,
+              style: Theme.of(context).textTheme.headline4,
+            );
+          }
+        ),
+        MyChildWidget(
+          label: &#34;Click to update number!&#34;,
+          onWidgetClicked: () {
+            var valueService = Provider.of&lt;ValueService&gt;(context, listen: false);
+            valueService.count++;
+          }
+        ),
+        MyChildWidget(
+          label: &#34;Click to update color&#34;,
+          onWidgetClicked: () {
+            var colorService = Provider.of&lt;ColorService&gt;(context, listen: false);
+            colorService.color = color!;
+          }
+        )
+      ]
+    );
+  }
+}
+
+</code></pre>
+<p>Back on the <strong>MyApp</strong>, populate the newly created constructor parameter to the <strong>MyWidget</strong> widgets by passing a color (i.e. green for the top widget, purple for the second widget):</p>
+<pre><code>const Expanded(
+  child: Center(
+    child: MyWidget(
+      color: Colors.green,
+      label: &#39;Top Widget&#39;)
+  )
+),
+const Expanded(
+  child: Center(
+    child: MyWidget(
+      color: Colors.purple,
+      label: &#39;Bottom Widget&#39;)
+  )
+),
+</code></pre>
+<p>Updated <strong>MyApp</strong> widget should look like the code below:</p>
+<pre><code>class MyApp extends StatelessWidget {
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return Scaffold(
+      appBar: AppBar(
+        actions: [
+          NotificationWidget()
+        ]
+      ),
+        body: Column(
+          children: [
+            const Expanded(
+              child: Center(
+                child: MyWidget(
+                  color: Colors.green,
+                  label: &#39;Top Widget&#39;)
+              )
+            ),
+            const Expanded(
+              child: Center(
+                child: MyWidget(
+                  color: Colors.purple,
+                  label: &#39;Bottom Widget&#39;)
+              )
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) =&gt; NextPage())
+                );
+              },
+              child: const Text(&#39;Go to another page&#39;)
+            )
+          ]
+        ),
+    );
+  }
+}
+</code></pre>
+<p>Now let&#39;s repeat the exercise and tap on the newly provided buttons to trigger a change in the notification badge color:</p>
+<p class="image-container"><img alt="Details Page" src="img/7d576b3596d18ca4.gif"></p>
+<h2 is-upgraded>Complete code for this section</h2>
+<pre><code>import &#39;package:flutter/material.dart&#39;;
+import &#39;package:provider/provider.dart&#39;;
+
+void main() {
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) =&gt; ValueService()
+        ),
+        ChangeNotifierProvider(
+          create: (_) =&gt; ColorService()
+        )
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: MyApp()
+      )
+    )
+  );
+}
+
+
+class ValueService extends ChangeNotifier {
+  
+  int _count = 0;
+  
+  int get count =&gt; _count;
+  
+  set count(int value) {
+    _count = value;
+    notifyListeners();
+  }
+  
+}
+
+class ColorService extends ChangeNotifier {
+  
+  Color _color = Colors.red;
+  
+  Color get color =&gt;  _color;
+  
+  set color(Color value) {
+    _color = value;
+    notifyListeners();
+  }
+}
+
+class MyApp extends StatelessWidget {
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return Scaffold(
+      appBar: AppBar(
+        actions: [
+          NotificationWidget()
+        ]
+      ),
+        body: Column(
+          children: [
+            const Expanded(
+              child: Center(
+                child: MyWidget(
+                  color: Colors.green,
+                  label: &#39;Top Widget&#39;)
+              )
+            ),
+            const Expanded(
+              child: Center(
+                child: MyWidget(
+                  color: Colors.purple,
+                  label: &#39;Bottom Widget&#39;)
+              )
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) =&gt; NextPage())
+                );
+              },
+              child: const Text(&#39;Go to another page&#39;)
+            )
+          ]
+        ),
+    );
+  }
+}
+
+class NextPage extends StatelessWidget {
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return Scaffold(
+      appBar: AppBar(),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(&#34;This is another page!&#34;),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) =&gt; MyApp())
+                );
+              },
+              child: const Text(&#39;Go to the First Page again!&#39;)
+            )
+          ],
+        )
+      )
+    );
+  }
+}
+
+class MyChildWidget extends StatelessWidget {
+  
+  final Function? onWidgetClicked;
+  final String? label;
+  const MyChildWidget({ this.onWidgetClicked, this.label });
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return TextButton(
+      onPressed: () {
+        onWidgetClicked!();
+      },
+      child: Text(label!)
+    );
+  }
+}
+
+class MyWidget extends StatelessWidget {
+  
+  final String? label;
+  final Color? color;
+  
+  const MyWidget({ this.label, this.color });
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Consumer&lt;ValueService&gt;(
+          builder: (context, vService, child) {
+            return Text(
+              &#39;${label!}, ${vService.count}&#39;,
+              style: Theme.of(context).textTheme.headline4,
+            );
+          }
+        ),
+        MyChildWidget(
+          label: &#34;Click to update number!&#34;,
+          onWidgetClicked: () {
+            var valueService = Provider.of&lt;ValueService&gt;(context, listen: false);
+            valueService.count++;
+          }
+        ),
+        MyChildWidget(
+          label: &#34;Click to update color&#34;,
+          onWidgetClicked: () {
+            var colorService = Provider.of&lt;ColorService&gt;(context, listen: false);
+            colorService.color = color!;
+          }
+        )
+      ]
+    );
+  }
+}
+
+class NotificationWidget extends StatelessWidget {
+  
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 60,
+      margin: const EdgeInsets.only(right: 10),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.notifications,
+            color: Colors.white,
+            size: 25
+          ),
+          Consumer&lt;ColorService&gt;(
+            builder: (context, cService, child) {
+              return Container(
+                height: 30,
+                padding: const EdgeInsets.only(left: 10, right: 10),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: cService.color
+                ),
+                child: Consumer&lt;ValueService&gt;(
+                  builder: (context, vService, child) {
+                    return Text(vService.count.toString());
+                  }
+                )
+              );
+            }
+          )
+        ] 
+      )
+    );
+  }
+}
+
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Access a Provided Service from Another Service" duration="0">
+        <p class="image-container"><img alt="Details Page" src="img/cd661b5c5e21d057.png"></p>
+<p>Sometimes you want to consolidate all actions inside a single service; there are cases in which a combined set of features is required to complete a given task. Instead of putting all functionality inside the same service for the sake of convenience, it is best to keep related functionality separate, but only tap into the required functionality when needed.</p>
+<p>For that, we will create a common service, called <strong>CombinedService</strong> that actually pulls all available services and tap into their functionality without them having to know about each other, keeping the separation of concerns pristine and decoupled.</p>
+<p>Create a new class called <strong>CombinedService</strong> which will serve as the proxy to call the other services. Inside this class, we&#39;ll create a method called <strong>setBothColorAndValue</strong>, with the following specs:</p>
+<ul>
+<li>add the required parameters to set a color and a value, as well as a <strong>BuildContext</strong> parameter; we will need this to pull the services out of the <strong>Provider</strong>.</li>
+</ul>
+<p>Your new class&#39; code should look like this:</p>
+<pre><code>class CombinedService {
+  
+  void setBothColorAndValue(BuildContext context, Color c, int v) {
+    
+    var colorService = Provider.of&lt;ColorService&gt;(context, listen: false);
+    var valueService = Provider.of&lt;ValueService&gt;(context, listen: false);
+    
+    colorService.color = c;
+    valueService.count = v;
+  }
+}
+</code></pre>
+<p>Refactor the <strong>main</strong> method by adding a new provided service, wrapping our new <strong>CombinedService</strong> class inside a <strong>Provider</strong>; this one will trigger other services, so no need to be a <strong>ChangeNotifierProvider</strong>:</p>
+<pre><code>Provider(
+  create: (_) =&gt; CombinedService()
+)
+</code></pre>
+<p>Your updated <strong>main</strong> method should look like this:</p>
+<pre><code>void main() {
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) =&gt; ValueService()
+        ),
+        ChangeNotifierProvider(
+          create: (_) =&gt; ColorService()
+        ),
+        Provider(
+          create: (_) =&gt; CombinedService()
+        )
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: MyApp()
+      )
+    )
+  );
+}
+</code></pre>
+<p>Now let&#39;s add the functionality to trigger this action.</p>
+<p>Back on the <strong>MyApp</strong> widget, add a new <strong>TextButton</strong> under the second <strong>MyWidget</strong> widget wrapped by an <strong>Expanded</strong>. This button will require the context of the current page widget, and we&#39;ll pass an orange color, as well as the fixed value of 100. When the user taps on this button, this service will call the two other services (<strong>ValueService</strong> and <strong>ColorService</strong>), each of which in turn will execute their corresponding actions, notify listeners and rebuild accordingly.</p>
+<p>Your new button should look like this:</p>
+<pre><code>TextButton(
+  onPressed: () {
+    var combinedService = Provider.of&lt;CombinedService&gt;(context, listen: false);
+    combinedService.setBothColorAndValue(context, Colors.orange, 100);
+  },
+  child: const Text(&#39;Change Both&#39;)
+),
+</code></pre>
+<p>Updated <strong>MyApp</strong> widget should look like this:</p>
+<pre><code>class MyApp extends StatelessWidget {
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return Scaffold(
+      appBar: AppBar(
+        actions: [
+          NotificationWidget()
+        ]
+      ),
+        body: Column(
+          children: [
+            const Expanded(
+              child: Center(
+                child: MyWidget(
+                  color: Colors.green,
+                  label: &#39;Top Widget&#39;)
+              )
+            ),
+            const Expanded(
+              child: Center(
+                child: MyWidget(
+                  color: Colors.purple,
+                  label: &#39;Bottom Widget&#39;)
+              )
+            ),
+            TextButton(
+              onPressed: () {
+                var combinedService = Provider.of&lt;CombinedService&gt;(context, listen: false);
+                combinedService.setBothColorAndValue(context, Colors.orange, 100);
+              },
+              child: const Text(&#39;Change Both&#39;)
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) =&gt; NextPage())
+                );
+              },
+              child: const Text(&#39;Go to another page&#39;)
+            )
+          ]
+        ),
+    );
+  }
+}
+</code></pre>
+<p>Following the same exercise and tapping on our newly added button to change both color and value from a combined service that taps into other services should yield the following output on DartPad:</p>
+<p class="image-container"><img alt="Details Page" src="img/842d56955a1c3f64.gif"></p>
+<p>And with that, we are fully done with this workshop! Kudos to you for making it all the way to the end; although we went through some simple examples, these strategies can be utilized in production-level and enterprise-level apps, both small and large, while at the same time promoting good code distribution, separation of concerns and a clean architecture runway.</p>
+<p>Thanks again and hope you&#39;ve learned a lot from this experience.</p>
+<p>See you on the next one!</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Wrap-up" duration="0">
+        <p>In this codelab, we accomplished the following:</p>
+<ul>
+<li>Multiple levels at which you can manage state in your Flutter apps  <ul>
+<li>Using <strong>StatefulWidgets</strong> and the <strong>setState</strong> method to trigger changes</li>
+<li>Using <strong>ValueNotifier</strong> and <strong>ValueListenableBuilder</strong></li>
+<li>Sharing data between widgets</li>
+<li>Triggering rebuilds on one widget from another widget</li>
+<li>&#34;Lifting the State&#34; using <strong>Provider</strong></li>
+<li>Leveraging more than one service using <strong>MultiProvider</strong></li>
+<li>Communication between provided services</li>
+<li>Listening to changes and rebuilding using <strong>ChangeNotifierProvider</strong> and <strong>ChangeNotifier</strong> services in conjunction with <strong>Consumer</strong> widgets</li>
+</ul>
+</li>
+</ul>
+<h3 is-upgraded>Please don&#39;t forget to follow me on social media:</h3>
+<ul>
+<li>On Twitter (<a href="https://www.twitter.com/drcoderz" target="_blank">@drcoderz</a>)</li>
+<li>On YouTube (<a href="https://www.youtube.com/channel/UCKsp3r1ERjCpKJtD2n5WtPg" target="_blank">Roman Just Codes</a>)</li>
+<li>On My <a href="https://romanjustcodes.web.app/#/home" target="_blank">Personal Portfolio</a></li>
+<li>On <a href="https://medium.com/@romanejaquez" target="_blank">Medium</a></li>
+<li>On <a href="https://www.linkedin.com/in/roman-jaquez-8941a424/" target="_blank">LinkedIn</a></li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Complete Code" duration="0">
+        <pre><code language="language-flutter" class="language-flutter">import &#39;package:flutter/material.dart&#39;;
+import &#39;package:provider/provider.dart&#39;;
+
+void main() {
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) =&gt; ValueService()
+        ),
+        ChangeNotifierProvider(
+          create: (_) =&gt; ColorService()
+        ),
+        Provider(
+          create: (_) =&gt; CombinedService()
+        )
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: MyApp()
+      )
+    )
+  );
+}
+
+
+class ValueService extends ChangeNotifier {
+  
+  int _count = 0;
+  
+  int get count =&gt; _count;
+  
+  set count(int value) {
+    _count = value;
+    notifyListeners();
+  }
+  
+}
+
+class ColorService extends ChangeNotifier {
+  
+  Color _color = Colors.red;
+  
+  Color get color =&gt;  _color;
+  
+  set color(Color value) {
+    _color = value;
+    notifyListeners();
+  }
+}
+
+class CombinedService {
+  
+  void setBothColorAndValue(BuildContext context, Color c, int v) {
+    
+    var colorService = Provider.of&lt;ColorService&gt;(context, listen: false);
+    var valueService = Provider.of&lt;ValueService&gt;(context, listen: false);
+    
+    colorService.color = c;
+    valueService.count = v;
+  }
+}
+
+class MyApp extends StatelessWidget {
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return Scaffold(
+      appBar: AppBar(
+        actions: [
+          NotificationWidget()
+        ]
+      ),
+        body: Column(
+          children: [
+            const Expanded(
+              child: Center(
+                child: MyWidget(
+                  color: Colors.green,
+                  label: &#39;Top Widget&#39;)
+              )
+            ),
+            const Expanded(
+              child: Center(
+                child: MyWidget(
+                  color: Colors.purple,
+                  label: &#39;Bottom Widget&#39;)
+              )
+            ),
+            TextButton(
+              onPressed: () {
+                var combinedService = Provider.of&lt;CombinedService&gt;(context, listen: false);
+                combinedService.setBothColorAndValue(context, Colors.orange, 100);
+              },
+              child: const Text(&#39;Change Both&#39;)
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) =&gt; NextPage())
+                );
+              },
+              child: const Text(&#39;Go to another page&#39;)
+            )
+          ]
+        ),
+    );
+  }
+}
+
+class NextPage extends StatelessWidget {
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return Scaffold(
+      appBar: AppBar(),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(&#34;This is another page!&#34;),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) =&gt; MyApp())
+                );
+              },
+              child: const Text(&#39;Go to the First Page again!&#39;)
+            )
+          ],
+        )
+      )
+    );
+  }
+}
+
+class MyChildWidget extends StatelessWidget {
+  
+  final Function? onWidgetClicked;
+  final String? label;
+  const MyChildWidget({ this.onWidgetClicked, this.label });
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return TextButton(
+      onPressed: () {
+        onWidgetClicked!();
+      },
+      child: Text(label!)
+    );
+  }
+}
+
+class MyWidget extends StatelessWidget {
+  
+  final String? label;
+  final Color? color;
+  
+  const MyWidget({ this.label, this.color });
+  
+  @override
+  Widget build(BuildContext context) {
+    
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Consumer&lt;ValueService&gt;(
+          builder: (context, vService, child) {
+            return Text(
+              &#39;${label!}, ${vService.count}&#39;,
+              style: Theme.of(context).textTheme.headline4,
+            );
+          }
+        ),
+        MyChildWidget(
+          label: &#34;Click to update number!&#34;,
+          onWidgetClicked: () {
+            var valueService = Provider.of&lt;ValueService&gt;(context, listen: false);
+            valueService.count++;
+          }
+        ),
+        MyChildWidget(
+          label: &#34;Click to update color&#34;,
+          onWidgetClicked: () {
+            var colorService = Provider.of&lt;ColorService&gt;(context, listen: false);
+            colorService.color = color!;
+          }
+        )
+      ]
+    );
+  }
+}
+
+class NotificationWidget extends StatelessWidget {
+  
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 60,
+      margin: const EdgeInsets.only(right: 10),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.notifications,
+            color: Colors.white,
+            size: 25
+          ),
+          Consumer&lt;ColorService&gt;(
+            builder: (context, cService, child) {
+              return Container(
+                height: 30,
+                padding: const EdgeInsets.only(left: 10, right: 10),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: cService.color
+                ),
+                child: Consumer&lt;ValueService&gt;(
+                  builder: (context, vService, child) {
+                    return Text(vService.count.toString());
+                  }
+                )
+              );
+            }
+          )
+        ] 
+      )
+    );
+  }
+}
+
+
+</code></pre>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/codelab-elements/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/codelab-elements/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/codelab-elements/prettify.js"></script>
+  <script src="https://storage.googleapis.com/codelab-elements/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+</body>
+</html>
