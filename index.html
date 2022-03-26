@@ -43,6 +43,7 @@
 </li>
 </ul>
 <p class="image-container"><img alt="Details Page" src="img/cd661b5c5e21d057.png"></p>
+<p class="image-container"><img alt="Details Page" src="img/842d56955a1c3f64.gif"></p>
 
 
       </google-codelab-step>
@@ -2195,6 +2196,15 @@ class NotificationWidget extends StatelessWidget {
   <script src="https://storage.googleapis.com/codelab-elements/prettify.js"></script>
   <script src="https://storage.googleapis.com/codelab-elements/codelab-elements.js"></script>
   <script src="//support.google.com/inapp/api.js"></script>
-
+  <script src="https://code.jquery.com/jquery-3.6.0.slim.js" integrity="sha256-HwWONEZrpuoh951cQD1ov2HUK5zA5DwJ1DNUXaM6FsY=" crossorigin="anonymous"></script>
+  <script>
+    $(function() {
+      $('#done').removeAttr('href');
+      $('#done').css('cursor', 'pointer');
+      $('#done').click(function () { 
+        window.location.href = 'https://romanjustcodes.web.app/#/workshops';
+      });
+    });
+  </script>
 </body>
 </html>
